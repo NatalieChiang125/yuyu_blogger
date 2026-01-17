@@ -1,33 +1,47 @@
 "use client"
 
-import { posts as staticPosts } from "@/data/posts"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useRole } from "@/lib/useRole"
+import { Post } from "@/types/post"
 
 export default function HomeClient() {
   const role = useRole()
   const router = useRouter()
-
-  const [allPosts, setAllPosts] = useState(staticPosts)
-
-  useEffect(() => {
-    const stored = localStorage.getItem("posts")
-    if (stored) {
-      try {
-        setAllPosts(JSON.parse(stored))
-      } catch {
-        setAllPosts(staticPosts)
-      }
-    }
-  }, [])
-
+  const [allPosts, setAllPosts] = useState<Post[]>([])
   const [open, setOpen] = useState(false)
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const [searchText, setSearchText] = useState("")
 
+  // 取得所有貼文
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch("/api/posts")
+      if (!res.ok) throw new Error("Failed to fetch posts")
+      const data: Post[] = await res.json()
+      setAllPosts(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    fetchPosts()
+  }, [])
+
+  // 刪除貼文（部落客）
+  const handleDelete = async (id: string) => {
+    if (!confirm("確定要刪除這篇食帳嗎？")) return
+    await fetch("/api/posts", {
+      method: "DELETE",
+      body: JSON.stringify({ id }),
+    })
+    fetchPosts()
+  }
+
+  // 搜尋功能
   const handleSearch = () => {
     if (!searchText.trim()) return
     router.push(`/categories/search?search=${encodeURIComponent(searchText.trim())}`)
@@ -82,10 +96,7 @@ export default function HomeClient() {
         <input
           type="text"
           placeholder="搜尋餐點或地區"
-          className="
-            px-2 py-1 rounded-l border border-r-0 outline-none
-            w-36 sm:w-48 md:w-64
-          "
+          className="px-2 py-1 rounded-l border border-r-0 outline-none w-36 sm:w-48 md:w-64"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -98,7 +109,7 @@ export default function HomeClient() {
         </button>
       </div>
 
-      {/* 新增食帳 */}
+      {/* 新增食帳（部落客） */}
       {role === "blogger" && (
         <Link
           href="/admin/posts/new"
@@ -111,7 +122,6 @@ export default function HomeClient() {
       {/* ===== Sidebar ===== */}
       {open && (
         <>
-          {/* 背景遮罩 */}
           <div
             className="fixed inset-0 bg-black/40 z-[90]"
             onClick={() => {
@@ -120,10 +130,7 @@ export default function HomeClient() {
               setMenuOpen(null)
             }}
           />
-
-          {/* 左側選單 */}
           <aside className="fixed top-0 left-0 h-full w-52 z-[100] bg-white/30 backdrop-blur-xl p-6 shadow-2xl flex flex-col">
-            {/* 關閉按鈕 */}
             <button
               onClick={() => {
                 setOpen(false)
@@ -135,16 +142,12 @@ export default function HomeClient() {
               ☰
             </button>
 
-            {/* 選單內容 */}
             <nav className="space-y-6 pt-12">
               {menuData.map((country) => (
                 <div key={country.value}>
-                  {/* 第一層：國家 */}
                   <button
                     onClick={() =>
-                      setOpenCategory(
-                        openCategory === country.value ? null : country.value
-                      )
+                      setOpenCategory(openCategory === country.value ? null : country.value)
                     }
                     className="text-lg font-light flex items-center gap-2 w-full text-left hover:underline"
                   >
@@ -154,19 +157,15 @@ export default function HomeClient() {
                     </span>
                   </button>
 
-                  {/* 第二層：城市 / 縣市 */}
                   {openCategory === country.value && (
                     <ul className="mt-2 ml-4 space-y-2 text-gray-800">
                       {country.regions.map((region) => (
                         <li key={region.value}>
                           {country.label === "台灣" ? (
                             <>
-                              {/* 台灣縣市按鈕 */}
                               <button
                                 onClick={() =>
-                                  setMenuOpen(
-                                    menuOpen === region.value ? null : region.value
-                                  )
+                                  setMenuOpen(menuOpen === region.value ? null : region.value)
                                 }
                                 className="w-full text-left flex items-center gap-2 hover:underline"
                               >
@@ -176,7 +175,6 @@ export default function HomeClient() {
                                 </span>
                               </button>
 
-                              {/* 第三層：餐點類型 */}
                               {menuOpen === region.value && (
                                 <ul className="mt-2 ml-4 space-y-1 text-sm text-gray-700">
                                   {[
@@ -187,7 +185,6 @@ export default function HomeClient() {
                                     { label: "小吃", value: "snack" },
                                   ].map((type) => (
                                     <li key={type.value}>
-                                      {/* 改成 /categories/[slug] */}
                                       <Link href={`/categories/tw/${region.value.toLowerCase()}/${type.value.toLowerCase()}`}>
                                         {type.label}
                                       </Link>
@@ -197,7 +194,6 @@ export default function HomeClient() {
                               )}
                             </>
                           ) : (
-                            // 日本、美國點擊城市直接跳到該國整合頁
                             <Link
                               href={`/categories/${region.value.toLowerCase()}`}
                               className="hover:underline"
@@ -213,7 +209,6 @@ export default function HomeClient() {
               ))}
             </nav>
 
-            {/* 底部：關於我 */}
             <div className="mt-auto flex justify-center border-t-2 border-black/20 pt-4">
               <Link
                 href="/about"
@@ -233,11 +228,7 @@ export default function HomeClient() {
 
       {/* 首頁設計 */}
       <section className="relative h-[80vh] w-full">
-        <img
-          src="/HOME.png"
-          alt="Food"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src="/HOME.png" alt="Food" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-black/40 pointer-events-none" />
         <div className="relative z-10 flex h-full items-center justify-center">
           <div className="text-center text-white px-6">
@@ -271,35 +262,27 @@ export default function HomeClient() {
                 </p>
               </Link>
 
-              {/* 刪除按鈕，只給部落客 */}
+              {/* 部落客才可編輯/刪除 */}
               {role === "blogger" && (
-                <button
-                  onClick={() => {
-                    if (!confirm("確定要刪除這篇食帳嗎？")) return
-                    const updated = allPosts.filter(p => p.id !== post.id)
-                    setAllPosts(updated)
-                    localStorage.setItem("posts", JSON.stringify(updated))
-                  }}
-                  className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-800"
-                >
-                  刪除
-                </button>
+                <>
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-800"
+                  >
+                    刪除
+                  </button>
+                  <button
+                    onClick={() => router.push(`/admin/posts/edit/${post.id}`)}
+                    className="absolute top-2 right-16 bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-800"
+                  >
+                    編輯
+                  </button>
+                </>
               )}
-              {/* 編輯按鈕，只給部落客 */}
-              {role === "blogger" && (
-                <button
-                  onClick={() => router.push(`/admin/posts/edit/${post.id}`)}
-                  className="absolute top-2 right-16 bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-800"
-                >
-                  編輯
-                </button>
-              )}
-
             </div>
           ))}
         </div>
       </section>
-
     </main>
   )
 }

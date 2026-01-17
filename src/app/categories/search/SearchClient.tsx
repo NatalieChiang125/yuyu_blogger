@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Post } from "@/types/post"
-import { posts as staticPosts } from "@/data/posts"
 
 const slugMap: Record<string, string> = {
   台灣: "tw",
@@ -33,36 +32,45 @@ export default function SearchClient() {
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
 
   useEffect(() => {
-    const stored = localStorage.getItem("posts")
-    const allPosts: Post[] = stored ? JSON.parse(stored) : staticPosts
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("/api/posts")
+        const allPosts: Post[] = await res.json()
 
-    const knownKeywords = Object.keys(slugMap)
+        const knownKeywords = Object.keys(slugMap)
 
-    const extractKeywords = (text: string) => {
-      const result: string[] = []
-      let remaining = text
-      knownKeywords.forEach((key) => {
-        if (remaining.includes(key)) {
-          result.push(key)
-          remaining = remaining.replace(key, "")
+        const extractKeywords = (text: string) => {
+          const result: string[] = []
+          let remaining = text
+          knownKeywords.forEach((key) => {
+            if (remaining.includes(key)) {
+              result.push(key)
+              remaining = remaining.replace(key, "")
+            }
+          })
+          return result
         }
-      })
-      return result
+
+        const rawKeywords =
+          searchText.includes(" ")
+            ? searchText.split(/\s+/).filter(Boolean)
+            : extractKeywords(searchText)
+
+        const keywords = rawKeywords.map((k) => slugMap[k] || k.toLowerCase())
+
+        const filtered = allPosts.filter((post) => {
+          const slugs = post.categories.map((c) => c.slug.toLowerCase())
+          return keywords.every((k) => slugs.includes(k))
+        })
+
+        setFilteredPosts(filtered)
+      } catch (err) {
+        console.error(err)
+        setFilteredPosts([])
+      }
     }
 
-    const rawKeywords =
-      searchText.includes(" ")
-        ? searchText.split(/\s+/).filter(Boolean)
-        : extractKeywords(searchText)
-
-    const keywords = rawKeywords.map((k) => slugMap[k] || k.toLowerCase())
-
-    const filtered = allPosts.filter((post) => {
-      const slugs = post.categories.map((c) => c.slug.toLowerCase())
-      return keywords.every((k) => slugs.includes(k))
-    })
-
-    setFilteredPosts(filtered)
+    fetchPosts()
   }, [searchText])
 
   if (filteredPosts.length === 0) {
@@ -86,7 +94,7 @@ export default function SearchClient() {
         {searchText ? `搜尋結果：${searchText}` : "所有食帳"}
       </h1>
 
-      <div className="mt-12 grid grid-cols-3 gap-4">
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredPosts.map((post) => (
           <Link
             key={post.id}
