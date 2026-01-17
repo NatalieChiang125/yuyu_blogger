@@ -3,25 +3,39 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Post } from "@/types/post"
-import { posts as staticPosts } from "@/data/posts"
-import { useParams } from "next/navigation"
 
-export default function CategorySinglePage() {
-  const { slug } = useParams<{ slug: string | string[] }>()
+interface CategorySinglePageProps {
+  slug: string | string[]
+}
+
+export default function CategorySinglePage({ slug }: CategorySinglePageProps) {
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
 
   useEffect(() => {
-    const stored = localStorage.getItem("posts")
-    const allPosts: Post[] = stored ? JSON.parse(stored) : staticPosts
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("/api/posts")
+        const allPosts: Post[] = await res.json()
 
-    // 支援 slug 為字串或陣列
-    const s = Array.isArray(slug) ? slug[slug.length - 1].toLowerCase() : slug?.toLowerCase() || ""
+        // slug 可能是陣列，轉成小寫陣列
+        const slugs = Array.isArray(slug)
+          ? slug.map((s) => s.toLowerCase())
+          : [slug?.toLowerCase() || ""]
 
-    const filtered = allPosts.filter((post) =>
-      post.categories.some((c) => c.slug.toLowerCase() === s)
-    )
+        // 過濾貼文：只要貼文 categories 中有包含所有 slug
+        const filtered = allPosts.filter((post) => {
+          const postSlugs = post.categories.map((c) => c.slug.toLowerCase())
+          return slugs.every((s) => postSlugs.includes(s))
+        })
 
-    setFilteredPosts(filtered)
+        setFilteredPosts(filtered)
+      } catch (err) {
+        console.error("取得貼文失敗", err)
+        setFilteredPosts([])
+      }
+    }
+
+    fetchPosts()
   }, [slug])
 
   if (filteredPosts.length === 0) {
@@ -38,9 +52,9 @@ export default function CategorySinglePage() {
   return (
     <main className="max-w-6xl mx-auto px-6 py-16">
       <Link href="/" className="text-sm text-gray-500">← 回首頁</Link>
-      <h1 className="mt-6 text-3xl font-light">{Array.isArray(slug) ? slug.join("/") : slug}</h1>
+      <h1 className="mt-6 text-3xl font-light">{Array.isArray(slug) ? slug.join(" / ") : slug}</h1>
 
-      <div className="mt-12 grid grid-cols-3 gap-4">
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredPosts.map((post) => (
           <Link
             key={post.id}

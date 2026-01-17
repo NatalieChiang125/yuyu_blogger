@@ -20,6 +20,7 @@ export default function NewPostPage() {
   const [coverImage, setCoverImage] = useState("")
   const [rating, setRating] = useState(4)
   const [price, setPrice] = useState(0)
+  const [igUrl, setIgUrl] = useState("")
 
   const [countryId, setCountryId] = useState<string>("")
   const [regionId, setRegionId] = useState<string>("")
@@ -52,6 +53,7 @@ export default function NewPostPage() {
       price,
       categories: selectedCategories,
       content,
+      igUrl: igUrl.trim() || undefined,
     }
 
     try {
@@ -119,6 +121,17 @@ export default function NewPostPage() {
           placeholder="價格"
           value={price}
           onChange={(e) => setPrice(Number(e.target.value))}
+        />
+      </div>
+
+      {/* IG 原文 URL */}
+      <div>
+        <input
+          type="url"
+          placeholder="IG 原文 URL (選填)"
+          className="w-full border p-2 rounded"
+          value={igUrl}
+          onChange={(e) => setIgUrl(e.target.value)}
         />
       </div>
 

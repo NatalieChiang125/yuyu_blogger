@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Post } from "@/types/post"
-import { posts as staticPosts } from "@/data/posts"
 
 export default function CategoryPage() {
   const params = useParams()
@@ -15,19 +14,27 @@ export default function CategoryPage() {
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
 
   useEffect(() => {
-    const stored = localStorage.getItem("posts")
-    const allPosts: Post[] = stored ? JSON.parse(stored) : staticPosts
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("/api/posts")
+        const allPosts: Post[] = await res.json()
 
-    const filtered = allPosts.filter((post) => {
-      const slugs = post.categories.map((c) => c.slug.toLowerCase())
-      return (
-        slugs.includes(country.toLowerCase()) &&
-        slugs.includes(region.toLowerCase()) &&
-        slugs.includes(type.toLowerCase())
-      )
-    })
+        const slugs = [country.toLowerCase(), region.toLowerCase(), type.toLowerCase()]
 
-    setFilteredPosts(filtered)
+        const filtered = allPosts.filter((post) =>
+          slugs.every((slug) =>
+            post.categories.map((c) => c.slug.toLowerCase()).includes(slug)
+          )
+        )
+
+        setFilteredPosts(filtered)
+      } catch (err) {
+        console.error("取得貼文失敗", err)
+        setFilteredPosts([])
+      }
+    }
+
+    fetchPosts()
   }, [country, region, type])
 
   if (filteredPosts.length === 0) {
@@ -47,7 +54,7 @@ export default function CategoryPage() {
 
       <h1 className="mt-6 text-3xl font-light">{`${region} / ${type}`}</h1>
 
-      <div className="mt-12 grid grid-cols-3 gap-4">
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredPosts.map((post) => (
           <Link
             key={post.id}

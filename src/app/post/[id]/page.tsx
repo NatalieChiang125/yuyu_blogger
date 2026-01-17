@@ -4,17 +4,25 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Post } from "@/types/post"
-import { posts as staticPosts } from "@/data/posts"
 
 export default function PostPage() {
   const { id } = useParams<{ id: string }>()
   const [post, setPost] = useState<Post | null>(null)
 
   useEffect(() => {
-    const stored = localStorage.getItem("posts")
-    const allPosts: Post[] = stored ? JSON.parse(stored) : staticPosts
-    const found = allPosts.find((p) => p.id === id)
-    setPost(found || null)
+    const fetchPost = async () => {
+      try {
+        const res = await fetch("/api/posts")
+        const allPosts: Post[] = await res.json()
+        const found = allPosts.find((p) => p.id === id)
+        setPost(found || null)
+      } catch (err) {
+        console.error("取得貼文失敗", err)
+        setPost(null)
+      }
+    }
+
+    fetchPost()
   }, [id])
 
   if (!post) {
@@ -30,7 +38,7 @@ export default function PostPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-16">
-      {/* 返回 */}
+      {/* 返回首頁 */}
       <Link href="/" className="text-sm text-gray-500 hover:underline">
         ← 回首頁
       </Link>
@@ -40,17 +48,13 @@ export default function PostPage() {
         {post.categories.map((cat) => (
           <Link
             key={cat.id}
-            href={`/categories/${cat.slug.toLowerCase()}`} // 單層 slug
+            href={`/categories/${cat.slug.toLowerCase()}`}
             className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
           >
             {cat.name}
           </Link>
         ))}
       </div>
-
-
-
-
 
       {/* 標題 */}
       <h1 className="mt-6 text-4xl font-light">{post.title}</h1>
@@ -92,7 +96,6 @@ export default function PostPage() {
           return null
         })}
       </div>
-
 
       {/* IG */}
       {post.igUrl && (
