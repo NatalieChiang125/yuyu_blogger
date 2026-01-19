@@ -246,43 +246,55 @@ export default function HomeClient() {
       <section className="mx-auto max-w-6xl px-6 py-24">
         <h2 className="mb-12 text-3xl font-light tracking-wide">Recent Meals</h2>
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
-          {allPosts.map((post) => (
-            <div key={post.id} className="group block relative">
-              <Link href={`/post/${post.id}`}>
-                <div className="overflow-hidden rounded-2xl shadow-lg">
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <h3 className="mt-4 text-xl font-light">{post.title}</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  ★ {post.rating} · NT${post.price}
-                </p>
-              </Link>
+          {allPosts
+            .slice() // 複製陣列，避免改到原本 state
+            .sort((a, b) => {
+              // 如果有 createdAt，依時間排序
+              if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              }
+              // 沒有 createdAt 就用 id 排（假設 id 可排序）
+              return b.id.localeCompare(a.id)
+            })
+            .slice(0, 3) // 取最新三篇
+            .map((post) => (
+              <div key={post.id} className="group block relative">
+                <Link href={`/post/${post.id}`}>
+                  <div className="overflow-hidden rounded-2xl shadow-lg">
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <h3 className="mt-4 text-xl font-light">{post.title}</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    ★ {post.rating} · NT${post.price}
+                  </p>
+                </Link>
 
-              {/* 部落客才可編輯/刪除 */}
-              {role === "blogger" && (
-                <>
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                    className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-800"
-                  >
-                    刪除
-                  </button>
-                  <button
-                    onClick={() => router.push(`/admin/posts/edit/${post.id}`)}
-                    className="absolute top-2 right-16 bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-800"
-                  >
-                    編輯
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
+                {/* 部落客才可編輯/刪除 */}
+                {role === "blogger" && (
+                  <>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-800"
+                    >
+                      刪除
+                    </button>
+                    <button
+                      onClick={() => router.push(`/admin/posts/edit/${post.id}`)}
+                      className="absolute top-2 right-16 bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-800"
+                    >
+                      編輯
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
         </div>
       </section>
+
     </main>
   )
 }

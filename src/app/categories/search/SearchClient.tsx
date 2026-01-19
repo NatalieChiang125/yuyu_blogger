@@ -30,9 +30,12 @@ export default function SearchClient() {
   const searchText = searchParams.get("search") || ""
 
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
+  const [isLoading, setIsLoading] = useState(true) // ✅ 新增
 
   useEffect(() => {
     const fetchPosts = async () => {
+      setIsLoading(true)
+
       try {
         const res = await fetch("/api/posts")
         const allPosts: Post[] = await res.json()
@@ -56,7 +59,9 @@ export default function SearchClient() {
             ? searchText.split(/\s+/).filter(Boolean)
             : extractKeywords(searchText)
 
-        const keywords = rawKeywords.map((k) => slugMap[k] || k.toLowerCase())
+        const keywords = rawKeywords.map(
+          (k) => slugMap[k] || k.toLowerCase()
+        )
 
         const filtered = allPosts.filter((post) => {
           const slugs = post.categories.map((c) => c.slug.toLowerCase())
@@ -67,13 +72,29 @@ export default function SearchClient() {
       } catch (err) {
         console.error(err)
         setFilteredPosts([])
+      } finally {
+        setIsLoading(false) // ✅ 不論成功失敗都結束 loading
       }
     }
 
     fetchPosts()
   }, [searchText])
 
-  if (filteredPosts.length === 0) {
+  /* ========================
+     🔄 載入中
+  ======================== */
+  if (isLoading) {
+    return (
+      <main className="max-w-3xl mx-auto px-6 py-24 text-center">
+        <p className="text-gray-400">搜尋中…</p>
+      </main>
+    )
+  }
+
+  /* ========================
+     ❌ 查無資料
+  ======================== */
+  if (!isLoading && filteredPosts.length === 0) {
     return (
       <main className="max-w-3xl mx-auto px-6 py-24">
         <h1 className="text-2xl font-light">找不到符合的食帳</h1>
@@ -84,6 +105,9 @@ export default function SearchClient() {
     )
   }
 
+  /* ========================
+     ✅ 有資料
+  ======================== */
   return (
     <main className="max-w-6xl mx-auto px-6 py-16">
       <Link href="/" className="text-sm text-gray-500">
@@ -94,23 +118,25 @@ export default function SearchClient() {
         {searchText ? `搜尋結果：${searchText}` : "所有食帳"}
       </h1>
 
-      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-5 mt-12">
         {filteredPosts.map((post) => (
           <Link
             key={post.id}
             href={`/post/${post.id}`}
-            className="flex flex-col items-center text-center"
+            className="flex flex-col items-center text-center w-full"
           >
             {post.coverImage && (
               <img
                 src={post.coverImage}
-                className="rounded-xl w-32 h-32 object-cover mb-2"
+                alt={post.title}
+                className="rounded-xl w-24 h-full object-cover mb-2"
               />
             )}
             <h3 className="font-light text-sm">{post.title}</h3>
           </Link>
         ))}
       </div>
+
     </main>
   )
 }

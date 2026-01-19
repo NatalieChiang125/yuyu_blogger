@@ -25,6 +25,7 @@ export type Post = {
   igUrl?: string
   content?: ContentBlock[]
   categories: Category[]
+  createdAt: string
 }
 
     

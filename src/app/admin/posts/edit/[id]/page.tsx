@@ -6,7 +6,6 @@ import { categories } from "@/data/catagories"
 import { Category } from "@/types/category"
 import { Post, ContentBlock } from "@/types/post"
 
-/* ===== 小工具 ===== */
 const getChildren = (parentId: string) =>
   categories.filter((c) => c.parentId === parentId)
 
@@ -18,11 +17,11 @@ export default function EditPostPage() {
   const { id } = useParams<{ id: string }>()
   const [post, setPost] = useState<Post | null>(null)
 
-  /* 基本資料 */
   const [title, setTitle] = useState("")
   const [coverImage, setCoverImage] = useState("")
   const [rating, setRating] = useState(4)
   const [price, setPrice] = useState(0)
+  const [igUrl, setIgUrl] = useState("")
 
   const [countryId, setCountryId] = useState<string>("")
   const [regionId, setRegionId] = useState<string>("")
@@ -30,33 +29,34 @@ export default function EditPostPage() {
 
   const [content, setContent] = useState<ContentBlock[]>([])
 
-  /* ===== 載入原本的 post ===== */
   useEffect(() => {
-    const stored = localStorage.getItem("posts")
-    if (!stored) return
-    const allPosts: Post[] = JSON.parse(stored)
-    const found = allPosts.find((p) => p.id === id)
-    if (!found) return
-    setPost(found)
+    if (!id) return
+    fetch(`/api/posts/${id}`)
+      .then((res) => res.json())
+      .then((data: Post) => {
+        setPost(data)
+        setTitle(data.title || "")
+        setCoverImage(data.coverImage || "")
+        setRating(data.rating || 4)
+        setPrice(data.price || 0)
+        setContent(data.content || [])
+        setIgUrl(data.igUrl || "")
 
-    setTitle(found.title)
-    setCoverImage(found.coverImage)
-    setRating(found.rating)
-    setPrice(found.price)
-    setContent(found.content || [])
-
-    // 假設 categories[0]=country, [1]=region, [2]=type
-    setCountryId(found.categories[0]?.id || "")
-    setRegionId(found.categories[1]?.id || "")
-    setTypeId(found.categories[2]?.id || "")
+        setCountryId(data.categories?.[0]?.id || "")
+        setRegionId(data.categories?.[1]?.id || "")
+        setTypeId(data.categories?.[2]?.id || "")
+      })
+      .catch((err) => {
+        console.error(err)
+        alert("載入貼文失敗")
+      })
   }, [id])
 
-  /* ===== 新增內容區塊 ===== */
   const addTextBlock = () => setContent([...content, { type: "text", value: "" }])
   const addImageBlock = () => setContent([...content, { type: "image", src: "", caption: "" }])
 
-  /* ===== 儲存修改 ===== */
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!id) return
     if (!title || !coverImage || !countryId || !regionId || !typeId) {
       alert("請填完所有必填欄位")
       return
@@ -66,7 +66,7 @@ export default function EditPostPage() {
       categories.find((c) => c.id === countryId)!,
       categories.find((c) => c.id === regionId)!,
       categories.find((c) => c.id === typeId)!,
-    ]
+    ].filter(Boolean)
 
     const updatedPost: Post = {
       ...post!,
@@ -76,21 +76,27 @@ export default function EditPostPage() {
       price,
       categories: selectedCategories,
       content,
+      igUrl: igUrl.trim() || undefined,
     }
 
-    const old = localStorage.getItem("posts")
-    const allPosts: Post[] = old ? JSON.parse(old) : []
-    const index = allPosts.findIndex((p) => p.id === post!.id)
-    if (index >= 0) allPosts[index] = updatedPost
-    localStorage.setItem("posts", JSON.stringify(allPosts))
+    try {
+      const res = await fetch(`/api/posts/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPost),
+      })
+      if (!res.ok) throw new Error("更新貼文失敗")
 
-    alert("修改完成")
-    router.push("/")
+      alert("修改完成")
+      router.push("/")
+    } catch (err) {
+      console.error(err)
+      alert("更新貼文發生錯誤")
+    }
   }
 
   if (!post) return <p>載入中...</p>
 
-  /* ===== UI 跟 NewPostPage 類似 ===== */
   return (
     <main className="max-w-3xl mx-auto px-6 py-16 space-y-10">
       <h1 className="text-3xl font-light">編輯食帳</h1>
@@ -103,18 +109,13 @@ export default function EditPostPage() {
         onChange={(e) => setTitle(e.target.value)}
       />
 
-      {/* 封面 */}
-      {/* <input
-        placeholder="封面圖片 URL"
-        className="w-full border p-2 rounded"
-        value={coverImage}
-        onChange={(e) => setCoverImage(e.target.value)}
-      /> */}
+      {/* 封面圖片 */}
       <div>
         <label className="block mb-2">封面圖片</label>
         <input
           type="file"
           accept="image/*"
+          className="w-full border p-2 rounded"
           onChange={(e) => {
             const file = e.target.files?.[0]
             if (!file) return
@@ -122,15 +123,9 @@ export default function EditPostPage() {
             reader.onload = () => setCoverImage(reader.result as string)
             reader.readAsDataURL(file)
           }}
-          className="w-full border p-2 rounded"
         />
-        {/* 預覽 */}
         {coverImage && (
-          <img
-            src={coverImage}
-            alt="封面預覽"
-            className="mt-2 w-64 h-auto rounded"
-          />
+          <img src={coverImage} alt="封面預覽" className="mt-2 w-64 h-auto rounded" />
         )}
       </div>
 
@@ -195,51 +190,6 @@ export default function EditPostPage() {
       </div>
 
       {/* 內容區塊 */}
-      {/* <div className="space-y-6">
-        <h2 className="text-xl">內容</h2>
-        {content.map((block, i) => (
-          <div key={i} className="border p-4 rounded space-y-2">
-            {block.type === "text" ? (
-              <textarea
-                className="w-full border p-2 rounded"
-                value={block.value}
-                onChange={(e) => {
-                  const copy = [...content]
-                  copy[i] = { ...block, value: e.target.value }
-                  setContent(copy)
-                }}
-              />
-            ) : (
-              <>
-                <input
-                  className="w-full border p-2 rounded"
-                  placeholder="圖片 URL"
-                  value={block.src}
-                  onChange={(e) => {
-                    const copy = [...content]
-                    copy[i] = { ...block, src: e.target.value }
-                    setContent(copy)
-                  }}
-                />
-                <input
-                  className="w-full border p-2 rounded"
-                  placeholder="圖片說明"
-                  value={block.caption || ""}
-                  onChange={(e) => {
-                    const copy = [...content]
-                    copy[i] = { ...block, caption: e.target.value }
-                    setContent(copy)
-                  }}
-                />
-              </>
-            )}
-          </div>
-        ))}
-        <div className="flex gap-4">
-          <button onClick={addTextBlock} className="border px-4 py-2 rounded">+ 文字</button>
-          <button onClick={addImageBlock} className="border px-4 py-2 rounded">+ 圖片</button>
-        </div>
-      </div> */}
       <div className="space-y-6">
         <h2 className="text-xl">內容</h2>
         {content.map((block, i) => (
@@ -282,13 +232,8 @@ export default function EditPostPage() {
                     setContent(copy)
                   }}
                 />
-                {/* 預覽 */}
                 {block.src && (
-                  <img
-                    src={block.src}
-                    alt={block.caption || ""}
-                    className="w-4/5 max-w-xl rounded-2xl mt-2"
-                  />
+                  <img src={block.src} alt={block.caption || ""} className="w-4/5 max-w-xl rounded-2xl mt-2" />
                 )}
               </>
             )}

@@ -54,6 +54,7 @@ export default function NewPostPage() {
       categories: selectedCategories,
       content,
       igUrl: igUrl.trim() || undefined,
+      createdAt: new Date().toISOString(),
     }
 
     try {

@@ -54,23 +54,25 @@ export default function CategorySinglePage({ slug }: CategorySinglePageProps) {
       <Link href="/" className="text-sm text-gray-500">← 回首頁</Link>
       <h1 className="mt-6 text-3xl font-light">{Array.isArray(slug) ? slug.join(" / ") : slug}</h1>
 
-      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-5 mt-12">
         {filteredPosts.map((post) => (
           <Link
             key={post.id}
             href={`/post/${post.id}`}
-            className="flex flex-col items-center text-center"
+            className="flex flex-col items-center text-center w-full"
           >
             {post.coverImage && (
               <img
                 src={post.coverImage}
-                className="rounded-xl w-32 h-32 object-cover mb-2"
+                alt={post.title}
+                className="rounded-xl w-24 h-full object-cover mb-2"
               />
             )}
             <h3 className="font-light text-sm">{post.title}</h3>
           </Link>
         ))}
       </div>
+
     </main>
   )
 }
