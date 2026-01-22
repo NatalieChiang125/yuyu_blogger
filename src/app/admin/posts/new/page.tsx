@@ -88,6 +88,16 @@ export default function NewPostPage() {
         onChange={(e) => setTitle(e.target.value)}
       />
 
+      {/* ID */}
+      <div>
+        <input
+          placeholder="文章 ID (英文)"
+          className="w-full border p-2 rounded"
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+        />
+      </div>
+
       {/* 封面圖片 */}
       <div>
         <label className="block mb-2">封面圖片</label>
