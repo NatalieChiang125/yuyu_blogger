@@ -54,11 +54,11 @@ export default function HomeClient() {
       value: "Taiwan",
       regions: [
         { label: "台北", value: "Taipei" },
-        { label: "新竹", value: "Hsintu" },
-        { label: "台中", value: "Taichun" },
+        { label: "新竹", value: "Hsinchu" },
+        { label: "台中", value: "Taichung" },
         { label: "台南", value: "Tainan" },
         { label: "高雄", value: "Kaohsiung" },
-        { label: "屏東", value: "Pingtun" },
+        { label: "屏東", value: "Pingtung" },
       ],
     },
     {

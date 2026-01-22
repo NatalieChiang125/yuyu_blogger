@@ -8,7 +8,7 @@ const postsFile = path.join(process.cwd(), "data/posts.json");
 // GET 單篇貼文
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const id = url.pathname.split("/").pop(); // 取最後一段作為 id
+  const id = decodeURIComponent(url.pathname.split("/").pop() || ""); // ✅ decode 中文
   if (!id) return NextResponse.json({ error: "缺少 id" }, { status: 400 });
 
   const json = fs.readFileSync(postsFile, "utf-8");
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 // PUT 編輯貼文
 export async function PUT(req: NextRequest) {
   const url = new URL(req.url);
-  const id = url.pathname.split("/").pop();
+  const id = decodeURIComponent(url.pathname.split("/").pop() || ""); // ✅ decode 中文
   if (!id) return NextResponse.json({ error: "缺少 id" }, { status: 400 });
 
   const updatedPost: Post = await req.json();

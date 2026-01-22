@@ -18,6 +18,7 @@ export default function EditPostPage() {
   const [post, setPost] = useState<Post | null>(null)
 
   const [title, setTitle] = useState("")
+  const [postId, setPostId] = useState("")
   const [coverImage, setCoverImage] = useState("")
   const [rating, setRating] = useState(4)
   const [price, setPrice] = useState(0)
@@ -36,6 +37,7 @@ export default function EditPostPage() {
       .then((data: Post) => {
         setPost(data)
         setTitle(data.title || "")
+        setPostId(data.id || "")
         setCoverImage(data.coverImage || "")
         setRating(data.rating || 4)
         setPrice(data.price || 0)
@@ -70,6 +72,7 @@ export default function EditPostPage() {
 
     const updatedPost: Post = {
       ...post!,
+      id: postId,
       title,
       coverImage,
       rating,
@@ -107,6 +110,14 @@ export default function EditPostPage() {
         className="w-full border p-2 rounded"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+      />
+
+      {/* ID */}
+      <input
+        placeholder="食帳 ID（英文）"
+        className="w-full border p-2 rounded"
+        value={postId}
+        onChange={(e) => setPostId(e.target.value)}
       />
 
       {/* 封面圖片 */}
@@ -193,7 +204,19 @@ export default function EditPostPage() {
       <div className="space-y-6">
         <h2 className="text-xl">內容</h2>
         {content.map((block, i) => (
-          <div key={i} className="border p-4 rounded space-y-2">
+          <div key={i} className="border p-4 rounded space-y-2 relative">
+            {/* 刪除按鈕 */}
+            <button
+              onClick={() => {
+                const copy = [...content]
+                copy.splice(i, 1)
+                setContent(copy)
+              }}
+              className="absolute top-2 right-2 text-red-600 font-bold hover:text-red-800"
+            >
+              刪除
+            </button>
+
             {block.type === "text" ? (
               <textarea
                 className="w-full border p-2 rounded"

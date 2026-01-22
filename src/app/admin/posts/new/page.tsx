@@ -17,6 +17,7 @@ export default function NewPostPage() {
   const router = useRouter()
 
   const [title, setTitle] = useState("")
+  const [id, setId] = useState("")
   const [coverImage, setCoverImage] = useState("")
   const [rating, setRating] = useState(4)
   const [price, setPrice] = useState(0)
@@ -37,6 +38,8 @@ export default function NewPostPage() {
       return
     }
 
+    const postId = id.trim() ? id.trim() : slugify(title)
+
     const selectedCategories: Category[] = [
       categories.find((c) => c.id === countryId)!,
       categories.find((c) => c.id === regionId)!,
@@ -44,7 +47,7 @@ export default function NewPostPage() {
     ]
 
     const newPost: Post = {
-      id: slugify(title),
+      id: postId,
       title,
       catagory: "正餐",
       area: regionId,
@@ -187,7 +190,19 @@ export default function NewPostPage() {
       <div className="space-y-6">
         <h2 className="text-xl">內容</h2>
         {content.map((block, i) => (
-          <div key={i} className="border p-4 rounded space-y-2">
+          <div key={i} className="border p-4 rounded space-y-2 relative">
+            {/* 刪除按鈕 */}
+            <button
+              onClick={() => {
+                const copy = [...content]
+                copy.splice(i, 1)
+                setContent(copy)
+              }}
+              className="absolute top-2 right-2 text-red-600 font-bold hover:text-red-800"
+            >
+              刪除
+            </button>
+
             {block.type === "text" ? (
               <textarea
                 className="w-full border p-2 rounded"
@@ -240,6 +255,7 @@ export default function NewPostPage() {
           <button onClick={addImageBlock} className="border px-4 py-2 rounded">+ 圖片</button>
         </div>
       </div>
+
 
       {/* 送出 */}
       <button
