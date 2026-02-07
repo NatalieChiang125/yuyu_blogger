@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { categories } from "@/data/catagories"
 import { Category } from "@/types/category"
 import { Post, ContentBlock } from "@/types/post"
+import { supabase } from "@/lib/supabase"
 
-// 小工具
 const getChildren = (parentId: string) =>
   categories.filter((c) => c.parentId === parentId)
 
@@ -32,6 +32,43 @@ export default function NewPostPage() {
   const addTextBlock = () => setContent([...content, { type: "text", value: "" }])
   const addImageBlock = () => setContent([...content, { type: "image", src: "", caption: "" }])
 
+  // ---- Supabase Storage 封面上傳 ----
+  const handleCoverUpload = async (file: File) => {
+    const filePath = `covers/${file.name}-${Date.now()}`
+    const { error } = await supabase.storage.from("posts").upload(filePath, file)
+    if (error) throw error
+    const { data: urlData } = supabase.storage.from("posts").getPublicUrl(filePath)
+    setCoverImage(urlData.publicUrl)
+  }
+
+  // ---- Supabase Storage 內容圖片上傳 ----
+  const handleContentImageUpload = async (file: File, index: number) => {
+    try {
+      const filePath = `content/${file.name}-${Date.now()}`
+      const { error: uploadError } = await supabase.storage
+        .from("posts")
+        .upload(filePath, file)
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage
+        .from("posts")
+        .getPublicUrl(filePath)
+      if (!data?.publicUrl) throw new Error("無法取得圖片 URL")
+
+      const copy = [...content]
+
+      // 只對 image block 更新 src
+      if (copy[index].type === "image") {
+        copy[index] = { ...copy[index], src: data.publicUrl }
+        setContent(copy)
+      }
+    } catch (err) {
+      console.error(err)
+      alert("上傳圖片失敗")
+    }
+  }
+
+
   const handleSubmit = async () => {
     if (!title || !coverImage || !countryId || !regionId || !typeId) {
       alert("請填完所有必填欄位")
@@ -40,11 +77,17 @@ export default function NewPostPage() {
 
     const postId = id.trim() ? id.trim() : slugify(title)
 
+    // const selectedCategories: Category[] = [
+    //   categories.find((c) => c.id === countryId)!,
+    //   categories.find((c) => c.id === regionId)!,
+    //   categories.find((c) => c.id === typeId)!,
+    // ]
+
     const selectedCategories: Category[] = [
-      categories.find((c) => c.id === countryId)!,
-      categories.find((c) => c.id === regionId)!,
-      categories.find((c) => c.id === typeId)!,
-    ]
+      categories.find((c) => c.id === countryId),
+      categories.find((c) => c.id === regionId),
+      categories.find((c) => c.id === typeId),
+    ].filter(Boolean) as Category[]
 
     const newPost: Post = {
       id: postId,
@@ -89,14 +132,12 @@ export default function NewPostPage() {
       />
 
       {/* ID */}
-      <div>
-        <input
-          placeholder="文章 ID (英文)"
-          className="w-full border p-2 rounded"
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-        />
-      </div>
+      <input
+        placeholder="文章 ID (英文)"
+        className="w-full border p-2 rounded"
+        value={id}
+        onChange={(e) => setId(e.target.value)}
+      />
 
       {/* 封面圖片 */}
       <div>
@@ -104,12 +145,15 @@ export default function NewPostPage() {
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => {
+          onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file) return
-            const reader = new FileReader()
-            reader.onload = () => setCoverImage(reader.result as string)
-            reader.readAsDataURL(file)
+            try {
+              await handleCoverUpload(file)
+            } catch (err) {
+              console.error(err)
+              alert("封面上傳失敗")
+            }
           }}
           className="w-full border p-2 rounded"
         />
@@ -139,26 +183,20 @@ export default function NewPostPage() {
       </div>
 
       {/* IG 原文 URL */}
-      <div>
-        <input
-          type="url"
-          placeholder="IG 原文 URL (選填)"
-          className="w-full border p-2 rounded"
-          value={igUrl}
-          onChange={(e) => setIgUrl(e.target.value)}
-        />
-      </div>
+      <input
+        type="url"
+        placeholder="IG 原文 URL (選填)"
+        className="w-full border p-2 rounded"
+        value={igUrl}
+        onChange={(e) => setIgUrl(e.target.value)}
+      />
 
       {/* 分類選擇 */}
       <div className="space-y-4">
         <select
           className="w-full rounded border bg-black text-white p-2"
           value={countryId}
-          onChange={(e) => {
-            setCountryId(e.target.value)
-            setRegionId("")
-            setTypeId("")
-          }}
+          onChange={(e) => { setCountryId(e.target.value); setRegionId(""); setTypeId(""); }}
         >
           <option value="">選擇國家</option>
           {categories.filter(c => !c.parentId).map(c => (
@@ -170,10 +208,7 @@ export default function NewPostPage() {
           <select
             className="w-full rounded border bg-black text-white p-2"
             value={regionId}
-            onChange={(e) => {
-              setRegionId(e.target.value)
-              setTypeId("")
-            }}
+            onChange={(e) => { setRegionId(e.target.value); setTypeId(""); }}
           >
             <option value="">選擇地區</option>
             {getChildren(countryId).map(c => (
@@ -196,12 +231,11 @@ export default function NewPostPage() {
         )}
       </div>
 
-      {/* 內容編輯 */}
+      {/* 內容區塊 */}
       <div className="space-y-6">
         <h2 className="text-xl">內容</h2>
         {content.map((block, i) => (
           <div key={i} className="border p-4 rounded space-y-2 relative">
-            {/* 刪除按鈕 */}
             <button
               onClick={() => {
                 const copy = [...content]
@@ -216,7 +250,6 @@ export default function NewPostPage() {
             {block.type === "text" ? (
               <textarea
                 className="w-full border p-2 rounded"
-                placeholder="文字內容"
                 value={block.value}
                 onChange={(e) => {
                   const copy = [...content]
@@ -230,16 +263,15 @@ export default function NewPostPage() {
                   type="file"
                   accept="image/*"
                   className="w-full border p-2 rounded"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0]
                     if (!file) return
-                    const reader = new FileReader()
-                    reader.onload = () => {
-                      const copy = [...content]
-                      copy[i] = { ...block, src: reader.result as string }
-                      setContent(copy)
+                    try {
+                      await handleContentImageUpload(file, i)
+                    } catch (err) {
+                      console.error(err)
+                      alert("圖片上傳失敗")
                     }
-                    reader.readAsDataURL(file)
                   }}
                 />
                 <input
@@ -266,8 +298,6 @@ export default function NewPostPage() {
         </div>
       </div>
 
-
-      {/* 送出 */}
       <button
         onClick={handleSubmit}
         className="bg-gray-600 text-white px-6 py-3 rounded hover:bg-gray-800"

@@ -19,11 +19,16 @@ export default function HomeClient() {
   const fetchPosts = async () => {
     try {
       const res = await fetch("/api/posts")
-      if (!res.ok) throw new Error("Failed to fetch posts")
-      const data: Post[] = await res.json()
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error("API Error:", data)
+        throw new Error(data.error || "Failed to fetch posts")
+      }
+
       setAllPosts(data)
     } catch (err) {
-      console.error(err)
+      console.error("Fetch failed:", err)
     }
   }
 
