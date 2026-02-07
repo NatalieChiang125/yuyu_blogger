@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { categories } from "@/data/catagories"
 import { Category } from "@/types/category"
 import { Post, ContentBlock } from "@/types/post"
-import { supabaseAdmin } from "@/lib/supabaseServer"
 
 const getChildren = (parentId: string) =>
   categories.filter((c) => c.parentId === parentId)
@@ -32,43 +31,38 @@ export default function NewPostPage() {
   const addTextBlock = () => setContent([...content, { type: "text", value: "" }])
   const addImageBlock = () => setContent([...content, { type: "image", src: "", caption: "" }])
 
-  // ---- Supabase Storage 封面上傳 ----
-  const handleCoverUpload = async (file: File) => {
+  // ---- 上傳圖片到 /api/upload ----
+  const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData()
     formData.append("file", file)
 
-    try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData })
-      if (!res.ok) throw new Error("封面上傳失敗")
-      const data = await res.json()
-      setCoverImage(data.publicUrl)
-    } catch (err) {
-      console.error(err)
-      alert("封面上傳失敗")
-    }
+    const res = await fetch("/api/upload", { method: "POST", body: formData })
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error || "上傳失敗")
+    return data.publicUrl
   }
 
+  // ---- Supabase 上傳 ----
+  const handleCoverUpload = async (file: File) => {
+    const url = await uploadFile(file)
+    setCoverImage(url)
+  }
 
-  // ---- Supabase Storage 內容圖片上傳 ----
   const handleContentImageUpload = async (file: File, index: number) => {
-    const formData = new FormData()
-    formData.append("file", file)
-
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData })
-      if (!res.ok) throw new Error("內容圖片上傳失敗")
-      const data = await res.json()
-
+      const url = await uploadFile(file)
       const copy = [...content]
       if (copy[index].type === "image") {
-        copy[index] = { ...copy[index], src: data.publicUrl }
+        copy[index] = { ...copy[index], src: url }
         setContent(copy)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert("內容圖片上傳失敗")
+      alert("圖片上傳失敗：" + err.message)
     }
   }
+
 
 
 
