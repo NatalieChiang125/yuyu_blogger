@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { categories } from "@/data/catagories"
 import { Category } from "@/types/category"
 import { Post, ContentBlock } from "@/types/post"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabaseServer"
 
 const getChildren = (parentId: string) =>
   categories.filter((c) => c.parentId === parentId)
@@ -35,9 +35,9 @@ export default function NewPostPage() {
   // ---- Supabase Storage 封面上傳 ----
   const handleCoverUpload = async (file: File) => {
     const filePath = `covers/${file.name}-${Date.now()}`
-    const { error } = await supabase.storage.from("posts").upload(filePath, file)
+    const { error } = await supabaseAdmin.storage.from("posts").upload(filePath, file)
     if (error) throw error
-    const { data: urlData } = supabase.storage.from("posts").getPublicUrl(filePath)
+    const { data: urlData } = supabaseAdmin.storage.from("posts").getPublicUrl(filePath)
     setCoverImage(urlData.publicUrl)
   }
 
@@ -45,12 +45,12 @@ export default function NewPostPage() {
   const handleContentImageUpload = async (file: File, index: number) => {
     try {
       const filePath = `content/${file.name}-${Date.now()}`
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from("posts")
         .upload(filePath, file)
       if (uploadError) throw uploadError
 
-      const { data } = supabase.storage
+      const { data } = supabaseAdmin.storage
         .from("posts")
         .getPublicUrl(filePath)
       if (!data?.publicUrl) throw new Error("無法取得圖片 URL")

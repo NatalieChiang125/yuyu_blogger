@@ -33,13 +33,13 @@
 // }
 
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabaseServer"
 import { Post } from "@/types/post"
 
 // GET 所有貼文
 export async function GET() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("posts")
       .select("*")
       .order("created_at", { ascending: false })
@@ -60,7 +60,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const newPost: Post = await req.json()
 
-  const { data, error } = await supabase.from("posts").insert([newPost])
+  const { data, error } = await supabaseAdmin.from("posts").insert([newPost])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { id } = await req.json()
 
-  const { error } = await supabase.from("posts").delete().eq("id", id)
+  const { error } = await supabaseAdmin.from("posts").delete().eq("id", id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

@@ -39,7 +39,7 @@
 // }
 
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabaseServer"
 import { Post } from "@/types/post"
 
 // GET 單篇貼文
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const id = decodeURIComponent(url.pathname.split("/").pop() || "")
   if (!id) return NextResponse.json({ error: "缺少 id" }, { status: 400 })
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("posts")
     .select("*")
     .eq("id", id)
@@ -67,7 +67,7 @@ export async function PUT(req: NextRequest) {
 
   const updatedPost: Post = await req.json()
 
-  const { error } = await supabase.from("posts").update(updatedPost).eq("id", id)
+  const { error } = await supabaseAdmin.from("posts").update(updatedPost).eq("id", id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
