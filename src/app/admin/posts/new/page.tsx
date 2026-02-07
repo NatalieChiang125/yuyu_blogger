@@ -34,39 +34,42 @@ export default function NewPostPage() {
 
   // ---- Supabase Storage 封面上傳 ----
   const handleCoverUpload = async (file: File) => {
-    const filePath = `covers/${file.name}-${Date.now()}`
-    const { error } = await supabaseAdmin.storage.from("posts").upload(filePath, file)
-    if (error) throw error
-    const { data: urlData } = supabaseAdmin.storage.from("posts").getPublicUrl(filePath)
-    setCoverImage(urlData.publicUrl)
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) throw new Error("封面上傳失敗")
+      const data = await res.json()
+      setCoverImage(data.publicUrl)
+    } catch (err) {
+      console.error(err)
+      alert("封面上傳失敗")
+    }
   }
+
 
   // ---- Supabase Storage 內容圖片上傳 ----
   const handleContentImageUpload = async (file: File, index: number) => {
-    try {
-      const filePath = `content/${file.name}-${Date.now()}`
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from("posts")
-        .upload(filePath, file)
-      if (uploadError) throw uploadError
+    const formData = new FormData()
+    formData.append("file", file)
 
-      const { data } = supabaseAdmin.storage
-        .from("posts")
-        .getPublicUrl(filePath)
-      if (!data?.publicUrl) throw new Error("無法取得圖片 URL")
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) throw new Error("內容圖片上傳失敗")
+      const data = await res.json()
 
       const copy = [...content]
-
-      // 只對 image block 更新 src
       if (copy[index].type === "image") {
         copy[index] = { ...copy[index], src: data.publicUrl }
         setContent(copy)
       }
     } catch (err) {
       console.error(err)
-      alert("上傳圖片失敗")
+      alert("內容圖片上傳失敗")
     }
   }
+
 
 
   const handleSubmit = async () => {
