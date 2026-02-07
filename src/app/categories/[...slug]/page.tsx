@@ -22,8 +22,16 @@ export default function CategorySinglePage({ slug }: CategorySinglePageProps) {
           ? slug.map((s) => s.toLowerCase())
           : [slug?.toLowerCase() || ""]
 
+        const mappedPosts: Post[] = allPosts.map((p: any) => ({
+          ...p,
+          coverImage: p.cover_image, // 轉換欄位
+          igUrl: p.ig_url,
+          content: p.content ?? [],
+          categories: p.categories ?? [],
+        }))
+
         // 過濾貼文：只要貼文 categories 中有包含所有 slug
-        const filtered = allPosts.filter((post) => {
+        const filtered = mappedPosts.filter((post) => {
           const postSlugs = post.categories.map((c) => c.slug.toLowerCase())
           return slugs.every((s) => postSlugs.includes(s))
         })

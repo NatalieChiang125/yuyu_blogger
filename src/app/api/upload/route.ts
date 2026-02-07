@@ -13,12 +13,14 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    const filePath = `uploads/${file.name}-${Date.now()}`
+    const safeName = encodeURIComponent(file.name)
+    const filePath = `uploads/${safeName}-${Date.now()}`
 
     const { error } = await supabaseAdmin.storage.from("posts").upload(filePath, buffer)
     if (error) throw error
 
     const { data } = supabaseAdmin.storage.from("posts").getPublicUrl(filePath)
+    if (!data.publicUrl) throw new Error("Failed to get public URL")
 
     return NextResponse.json({ publicUrl: data.publicUrl })
   } catch (err: any) {

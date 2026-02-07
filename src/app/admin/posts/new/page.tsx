@@ -86,33 +86,38 @@ export default function NewPostPage() {
       categories.find((c) => c.id === typeId),
     ].filter(Boolean) as Category[]
 
-    const newPost: Post = {
-      id: postId,
+    // DB 對應 Supabase 欄位
+    const newPostForDB = {
       title,
-      catagory: "正餐",
-      area: regionId,
-      coverImage,
+      cover_image: coverImage,
       rating,
       price,
+      ig_url: igUrl.trim() || null,
       categories: selectedCategories,
       content,
-      igUrl: igUrl.trim() || undefined,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     }
+
+    console.log("Posting to DB:", JSON.stringify(newPostForDB, null, 2))
 
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPost),
+        body: JSON.stringify(newPostForDB),
       })
-      if (!res.ok) throw new Error("新增貼文失敗")
+      const resData = await res.json()
+      if (!res.ok) {
+        //const errData = await resData
+        console.error("Supabase Error:", resData)
+        throw new Error(resData.error ||"新增貼文失敗")
+      }
 
       alert("新增完成")
       router.push("/")
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert("新增貼文發生錯誤")
+      alert("新增貼文發生錯誤：" + err.message)
     }
   }
 

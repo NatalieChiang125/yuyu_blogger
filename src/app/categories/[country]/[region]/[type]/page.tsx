@@ -31,7 +31,15 @@ export default function CategoryPage() {
           .filter(Boolean)
           .map(s => s.toLowerCase())
 
-        const filtered = allPosts.filter(post => {
+        const mappedPosts: Post[] = allPosts.map((p: any) => ({
+          ...p,
+          coverImage: p.cover_image, // 轉換欄位
+          igUrl: p.ig_url,
+          content: p.content ?? [],
+          categories: p.categories ?? [],
+        }))
+
+        const filtered = mappedPosts.filter(post => {
           const postSlugs = post.categories.map(c =>
             c.slug.toLowerCase()
           )

@@ -19,13 +19,24 @@ export default function HomeClient() {
   const fetchPosts = async () => {
     try {
       const res = await fetch("/api/posts")
-      const data = await res.json()
+      //const data = await res.json()
 
       if (!res.ok) {
+        const data = await res.json()
         console.error("API Error:", data)
         throw new Error(data.error || "Failed to fetch posts")
       }
 
+      // console.log("Raw posts from API:", data)
+      // // 將 snake_case 轉成 camelCase
+      // const mappedPosts: Post[] = data.map((p: any) => ({
+      //   ...p,
+      //   coverImage: p.cover_image,
+      //   igUrl: p.ig_url,
+      // }))
+      // console.log("Mapped Posts:", mappedPosts)
+
+      const data: Post[] = await res.json()
       setAllPosts(data)
     } catch (err) {
       console.error("Fetch failed:", err)

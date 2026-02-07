@@ -63,7 +63,15 @@ export default function SearchClient() {
           (k) => slugMap[k] || k.toLowerCase()
         )
 
-        const filtered = allPosts.filter((post) => {
+        const mappedPosts: Post[] = allPosts.map((p: any) => ({
+          ...p,
+          coverImage: p.cover_image, // 轉換欄位
+          igUrl: p.ig_url,
+          content: p.content ?? [],
+          categories: p.categories ?? [],
+        }))
+
+        const filtered = mappedPosts.filter((post) => {
           const slugs = post.categories.map((c) => c.slug.toLowerCase())
           return keywords.every((k) => slugs.includes(k))
         })

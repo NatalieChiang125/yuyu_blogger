@@ -56,7 +56,11 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
 
-  return NextResponse.json(data as Post)
+  return NextResponse.json({
+    ...data,
+    coverImage: data.cover_image,
+    igUrl: data.ig_url,
+  } as Post)
 }
 
 // PUT 編輯貼文

@@ -49,7 +49,13 @@ export async function GET() {
       return NextResponse.json({ error }, { status: 500 })
     }
 
-    return NextResponse.json(data ?? [])
+    const formatted = (data ?? []).map(post => ({
+      ...post,
+      coverImage: post.cover_image,
+      igUrl: post.ig_url,
+    }))
+
+    return NextResponse.json(formatted)
   } catch (err) {
     console.error("API Crash:", err)
     return NextResponse.json({ error: "Server crashed" }, { status: 500 })
@@ -60,7 +66,20 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const newPost: Post = await req.json()
 
-  const { data, error } = await supabaseAdmin.from("posts").insert([newPost])
+  const postForDB = {
+    title: newPost.title,
+    cover_image: newPost.coverImage ?? null,
+    rating: newPost.rating ?? null,
+    price: newPost.price ?? null,
+    ig_url: newPost.igUrl ?? null,
+    categories: newPost.categories ?? [],
+    content: newPost.content ?? [],
+    created_at: new Date().toISOString(),
+  }
+
+  console.log("Inserting into Supabase:", postForDB)
+
+  const { data, error } = await supabaseAdmin.from("posts").insert([postForDB]).select()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
