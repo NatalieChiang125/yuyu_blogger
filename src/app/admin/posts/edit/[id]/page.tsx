@@ -4,14 +4,14 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { categories } from "@/data/catagories"
 import { Category } from "@/types/category"
-import { Post, ContentBlock, ImageBlock, TextBlock } from "@/types/post"
-import { supabaseAdmin } from "@/lib/supabaseServer"
+import { Post, ContentBlock, ImageBlock } from "@/types/post"
+//import { supabaseAdmin } from "@/lib/supabaseServer"
 
 const getChildren = (parentId: string) =>
   categories.filter((c) => c.parentId === parentId)
 
-const slugify = (text: string) =>
-  text.toLowerCase().replace(/\s+/g, "-")
+// const slugify = (text: string) =>
+//   text.toLowerCase().replace(/\s+/g, "-")
 
 export default function EditPostPage() {
   const router = useRouter()
@@ -33,7 +33,7 @@ export default function EditPostPage() {
 
   useEffect(() => {
     if (!id) return
-    fetch(`/api/posts/${id}`)
+    fetch(`/api/posts/${id}?id=${id}`)
       .then((res) => res.json())
       .then((data: Post) => {
         setPost(data)
@@ -58,38 +58,41 @@ export default function EditPostPage() {
   const addTextBlock = () => setContent([...content, { type: "text", value: "" }])
   const addImageBlock = () => setContent([...content, { type: "image", src: "", caption: "" }])
 
+  // ---- 上傳圖片 (封面 & 內容圖片共用) ----
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const res = await fetch("/api/upload", { method: "POST", body: formData })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || "上傳失敗")
+    return data.publicUrl
+  }
+
   // ---- 封面上傳 ----
   const handleCoverUpload = async (file: File) => {
     try {
-      const filePath = `covers/${file.name}-${Date.now()}`
-      const { error: uploadError } = await supabaseAdmin.storage.from("posts").upload(filePath, file)
-      if (uploadError) throw uploadError
-      const { data } = supabaseAdmin.storage.from("posts").getPublicUrl(filePath)
-      if (!data?.publicUrl) throw new Error("無法取得封面 URL")
-      setCoverImage(data.publicUrl)
-    } catch (err) {
+      const url = await uploadFile(file)
+      setCoverImage(url)
+    } catch (err: any) {
       console.error(err)
-      alert("封面上傳失敗")
+      alert("封面上傳失敗：" + err.message)
     }
   }
+
 
   // ---- 內容圖片上傳 ----
   const handleContentImageUpload = async (file: File, index: number) => {
     try {
-      const filePath = `content/${file.name}-${Date.now()}`
-      const { error: uploadError } = await supabaseAdmin.storage.from("posts").upload(filePath, file)
-      if (uploadError) throw uploadError
-      const { data } = supabaseAdmin.storage.from("posts").getPublicUrl(filePath)
-      if (!data?.publicUrl) throw new Error("無法取得圖片 URL")
-
+      const url = await uploadFile(file)
       const copy = [...content]
       if (copy[index].type === "image") {
-        copy[index] = { ...copy[index], src: data.publicUrl } as ImageBlock
+        copy[index] = { ...copy[index], src: url } as ImageBlock
         setContent(copy)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert("內容圖片上傳失敗")
+      alert("內容圖片上傳失敗：" + err.message)
     }
   }
 

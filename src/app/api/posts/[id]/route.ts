@@ -71,9 +71,24 @@ export async function PUT(req: NextRequest) {
 
   const updatedPost: Post = await req.json()
 
-  const { error } = await supabaseAdmin.from("posts").update(updatedPost).eq("id", id)
+  const postForDB = {
+    title: updatedPost.title,
+    cover_image: updatedPost.coverImage,
+    rating: updatedPost.rating,
+    price: updatedPost.price,
+    ig_url: updatedPost.igUrl,
+    categories: updatedPost.categories,
+    content: updatedPost.content,
+  }
+
+  //const { error } = await supabaseAdmin.from("posts").update(updatedPost).eq("id", id)
+  const { data, error } = await supabaseAdmin
+    .from("posts")
+    .update(postForDB)
+    .eq("id", id)
+    .select()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json(data)
 }
