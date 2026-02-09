@@ -39,14 +39,23 @@ export default function NewPostPage() {
     const res = await fetch("/api/upload", { method: "POST", body: formData })
     const data = await res.json()
 
+    console.log("upload 回傳:", data)
+
     if (!res.ok) throw new Error(data.error || "上傳失敗")
     return data.publicUrl
   }
 
   // ---- Supabase 上傳 ----
   const handleCoverUpload = async (file: File) => {
-    const url = await uploadFile(file)
-    setCoverImage(url)
+    try {
+      const url = await uploadFile(file) // 上傳拿回 URL
+      setCoverImage(url)                  // 更新 state
+      return url                          // 回傳 URL 給 handleSubmit 直接用
+    } catch (err: any) {
+      console.error(err)
+      alert("封面上傳失敗：" + err.message)
+      return null
+    }
   }
 
   const handleContentImageUpload = async (file: File, index: number) => {
@@ -61,10 +70,10 @@ export default function NewPostPage() {
       console.error(err)
       alert("圖片上傳失敗：" + err.message)
     }
+    console.log("送出時 coverImage:", coverImage)
   }
 
-
-
+  console.log("目前 coverImage:", coverImage)
 
   const handleSubmit = async () => {
     if (!title || !coverImage || !countryId || !regionId || !typeId) {
@@ -72,7 +81,17 @@ export default function NewPostPage() {
       return
     }
 
-    const postId = id.trim() ? id.trim() : slugify(title)
+    let finalCoverImage = coverImage
+
+    // 如果 coverImage 還是空的，要求使用者選檔
+    if (!finalCoverImage) {
+      alert("請先上傳封面圖片")
+      return
+    }
+
+    //const postId = id.trim() ? id.trim() : slugify(title)
+    const postId = id.trim() || (title ? slugify(title) : `post-${Date.now()}`);
+
 
     // const selectedCategories: Category[] = [
     //   categories.find((c) => c.id === countryId)!,
@@ -88,8 +107,9 @@ export default function NewPostPage() {
 
     // DB 對應 Supabase 欄位
     const newPostForDB = {
+      id: postId,
       title,
-      cover_image: coverImage,
+      cover_image: finalCoverImage,
       rating,
       price,
       ig_url: igUrl.trim() || null,

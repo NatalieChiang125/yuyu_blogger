@@ -3,43 +3,45 @@ import type { NextApiRequest, NextApiResponse } from "next"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { data: posts, error } = await supabaseAdmin
-      .from("posts")
-      .select("*, content(*)") // 如果 content 是 JSONB 或其他子表
-    if (error) throw error
+    if (req.method === "GET") {
+      const { data: posts, error } = await supabaseAdmin
+        .from("posts")
+        .select("*, content(*)")
+      if (error) throw error
 
-    const mappedPosts = posts.map((p: any) => {
-      // 生成封面圖片 public URL
-      let coverUrl = p.cover_image
-      if (coverUrl) {
-        const { data: publicData } = supabaseAdmin
-          .storage
-          .from("posts")
-          .getPublicUrl(coverUrl)
-        coverUrl = publicData?.publicUrl || coverUrl
-      }
-
-      // 如果 content 裡也有圖片，也可以在這裡生成 public URL
-      const content = p.content?.map((block: any) => {
-        if (block.type === "image" && block.src) {
-          const { data: publicData } = supabaseAdmin
-            .storage
-            .from("posts")
-            .getPublicUrl(block.src)
-          return { ...block, src: publicData?.publicUrl || block.src }
-        }
-        return block
-      })
-
-      return {
+      const mappedPosts = posts.map((p: any) => ({
         ...p,
-        coverImage: coverUrl,
+        coverImage: p.cover_image,
         igUrl: p.ig_url,
-        content,
-      }
-    })
+        content: p.content,
+      }))
 
-    res.status(200).json(mappedPosts)
+      return res.status(200).json(mappedPosts)
+    }
+
+    if (req.method === "POST") {
+      const body = req.body  // <-- 這裡改成 req.body
+      console.log("API received body:", body)
+
+      if (!body.id || !body.title || !body.cover_image) {
+        return res.status(400).json({ error: "id, title, cover_image are required" })
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from("posts")
+        .insert([body])
+
+      if (error) {
+        console.error("Supabase insert error:", error)
+        return res.status(400).json({ error })
+      }
+
+      return res.status(200).json(data)
+    }
+
+    res.setHeader("Allow", ["GET", "POST"])
+    res.status(405).json({ error: `Method ${req.method} not allowed` })
+
   } catch (err: any) {
     console.error("API /posts error:", err)
     res.status(500).json({ error: err.message })

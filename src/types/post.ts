@@ -16,6 +16,7 @@ export type ContentBlock = TextBlock | ImageBlock
 
 export type Post = {
   id: string
+  //slug: string
   title: string
   catagory: string
   area: string

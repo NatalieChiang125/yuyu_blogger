@@ -36,8 +36,21 @@ export default function HomeClient() {
       // }))
       // console.log("Mapped Posts:", mappedPosts)
 
-      const data: Post[] = await res.json()
-      setAllPosts(data)
+      // const data: Post[] = await res.json()
+      // setAllPosts(data)
+      const data = await res.json()
+
+      const mappedPosts: Post[] = data.map((p: any) => ({
+        ...p,
+        coverImage: p.cover_image,
+        igUrl: p.ig_url,
+        createdAt: p.created_at,
+      }))
+
+      // setAllPosts(mappedPosts)
+      setAllPosts(mappedPosts)
+      console.log("API 原始資料:", data)
+
     } catch (err) {
       console.error("Fetch failed:", err)
     }

@@ -64,14 +64,15 @@ export async function GET() {
 
 // POST 新增貼文
 export async function POST(req: NextRequest) {
-  const newPost: Post = await req.json()
+  const newPost: any = await req.json()
 
   const postForDB = {
+    id: newPost.id,
     title: newPost.title,
-    cover_image: newPost.coverImage ?? null,
+    cover_image: newPost.cover_image,
     rating: newPost.rating ?? null,
     price: newPost.price ?? null,
-    ig_url: newPost.igUrl ?? null,
+    ig_url: newPost.ig_url ?? null,
     categories: newPost.categories ?? [],
     content: newPost.content ?? [],
     created_at: new Date().toISOString(),
