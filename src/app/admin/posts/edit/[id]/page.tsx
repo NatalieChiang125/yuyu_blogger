@@ -201,6 +201,7 @@ export default function EditPostPage() {
 
       {/* 分類選擇 */}
       <div className="space-y-4">
+        {/* 國家 */}
         <select
           className="w-full rounded border bg-black text-white p-2"
           value={countryId}
@@ -212,7 +213,8 @@ export default function EditPostPage() {
           ))}
         </select>
 
-        {countryId && (
+        {/* 地區 */}
+        {countryId && getChildren(countryId).length > 0 && (
           <select
             className="w-full rounded border bg-black text-white p-2"
             value={regionId}
@@ -225,7 +227,8 @@ export default function EditPostPage() {
           </select>
         )}
 
-        {regionId && (
+        {/* 類型（只有當該地區有子分類時才顯示） */}
+        {regionId && getChildren(regionId).length > 0 && (
           <select
             className="w-full rounded border bg-black text-white p-2"
             value={typeId}
@@ -238,6 +241,7 @@ export default function EditPostPage() {
           </select>
         )}
       </div>
+
 
       {/* 內容區塊 */}
       <div className="space-y-6">
