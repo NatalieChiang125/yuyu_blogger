@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Family Food Blog (食帳網站)
 
-## Getting Started
+一個個人開發的食帳網站，紀錄餐廳體驗與美食心得，支援多層分類、封面與內容圖片上傳，以及 Instagram 連結分享。  
+網站以 **Next.js + TypeScript + Supabase** 建置。
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 功能 Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **文章管理**
+  - 新增 / 編輯 / 刪除食帳文章
+  - 每篇文章可設定：
+    - 標題、ID
+    - 封面圖片
+    - 評分與價格
+    - Instagram 連結
+    - 三層分類（國家 → 地區 → 類型）
+    - 內容區塊（文字或圖片 + 說明）
+- **前端展示**
+  - 首頁列表顯示所有文章
+  - 支援圖片顯示與文字排版
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 技術棧 Tech Stack
 
-## Learn More
+- **前端**: Next.js (App Router / TypeScript / TailwindCSS)
+- **後端 & DB**: Supabase (PostgreSQL + Storage)
+- **部署**: Vercel
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
