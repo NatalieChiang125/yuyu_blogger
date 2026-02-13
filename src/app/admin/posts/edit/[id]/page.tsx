@@ -168,10 +168,11 @@ export default function EditPostPage() {
           className="w-full border p-2 rounded"
           onChange={(e) => {
             const file = e.target.files?.[0]
-            if (!file) return
-            const reader = new FileReader()
-            reader.onload = () => setCoverImage(reader.result as string)
-            reader.readAsDataURL(file)
+            // if (!file) return
+            // const reader = new FileReader()
+            // reader.onload = () => setCoverImage(reader.result as string)
+            // reader.readAsDataURL(file)
+            if (file) handleCoverUpload(file)
           }}
         />
         {coverImage && (
@@ -278,14 +279,15 @@ export default function EditPostPage() {
                   className="w-full border p-2 rounded"
                   onChange={(e) => {
                     const file = e.target.files?.[0]
-                    if (!file) return
-                    const reader = new FileReader()
-                    reader.onload = () => {
-                      const copy = [...content]
-                      copy[i] = { ...block, src: reader.result as string }
-                      setContent(copy)
-                    }
-                    reader.readAsDataURL(file)
+                    // if (!file) return
+                    // const reader = new FileReader()
+                    // reader.onload = () => {
+                    //   const copy = [...content]
+                    //   copy[i] = { ...block, src: reader.result as string }
+                    //   setContent(copy)
+                    // }
+                    // reader.readAsDataURL(file)
+                    if (file) handleContentImageUpload(file, i)
                   }}
                 />
                 <input
