@@ -82,19 +82,41 @@ export default function EditPostPage() {
 
 
   // ---- 內容圖片上傳 ----
+  // const handleContentImageUpload = async (file: File, index: number) => {
+  //   try {
+  //     const url = await uploadFile(file)
+  //     const copy = [...content]
+  //     if (copy[index].type === "image") {
+  //       copy[index] = { ...copy[index], src: url } as ImageBlock
+  //       setContent(copy)
+  //     }
+  //   } catch (err: any) {
+  //     console.error(err)
+  //     alert("內容圖片上傳失敗：" + err.message)
+  //   }
+  // }
   const handleContentImageUpload = async (file: File, index: number) => {
     try {
       const url = await uploadFile(file)
-      const copy = [...content]
-      if (copy[index].type === "image") {
-        copy[index] = { ...copy[index], src: url } as ImageBlock
-        setContent(copy)
-      }
+
+      setContent(prev =>
+        prev.map((block, i) => {
+          if (i !== index) return block
+          if (block.type !== "image") return block
+
+          return {
+            type: "image",
+            src: url,
+            caption: block.caption || "",
+          }
+        })
+      )
+
     } catch (err: any) {
-      console.error(err)
-      alert("內容圖片上傳失敗：" + err.message)
+      alert(err.message)
     }
   }
+
 
   const handleSubmit = async () => {
     if (!id) return
