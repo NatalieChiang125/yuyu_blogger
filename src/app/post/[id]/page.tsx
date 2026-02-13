@@ -132,7 +132,7 @@ export default function PostPage() {
             return (
               <p
                 key={`text-${index}`}
-                className="whitespace-pre-line leading-relaxed text-gray-300"
+                className="whitespace-pre-line leading-relaxed text-gray-700 dark:text-gray-300"
               >
                 {block.value}
               </p>
@@ -148,7 +148,7 @@ export default function PostPage() {
                   className="w-4/5 max-w-xl rounded-2xl"
                 />
                 {block.caption && (
-                  <p className="text-sm text-gray-300 whitespace-pre-line">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
                     {block.caption}
                   </p>
                 )}
